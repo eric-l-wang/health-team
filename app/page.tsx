@@ -13,24 +13,29 @@ import { AnimatedTooltipPreview, people } from "@/components/selectable-avatars"
 interface InfoMessage {
   id: number;
   content: string;
-  // This tells us that at the time the info message was created,
-  // chatMessages.length had a certain value. In the merged view, this
-  // info message will be inserted after that many chat messages.
+  // at the time the info message was created, the chat had a certain length.
   afterChatIndex: number;
+  // Store the avatar id active when the info message was created (optional)
+  selectedAvatarId?: number;
 }
 
+type ChatMessage = { role: string; content: string };
+
+//
+// We add an `index` field for chat messages so we know their position
+// in the official messages array.
+//
 type DisplayItem =
-  | { type: "chat"; message: { role: string; content: string } }
+  | { type: "chat"; message: ChatMessage; index: number }
   | { type: "info"; message: InfoMessage };
 
 //
-// Helper function to merge chat messages with info messages
+// Merge chat messages with info messages, preserving the chat message index.
 //
 function mergeMessages(
-  chatMessages: Array<{ role: string; content: string }>,
+  chatMessages: ChatMessage[],
   infoMessages: InfoMessage[]
 ): DisplayItem[] {
-  // Make a copy and sort info messages by afterChatIndex and then by id
   const sortedInfo = [...infoMessages].sort((a, b) => {
     if (a.afterChatIndex === b.afterChatIndex) {
       return a.id - b.id;
@@ -41,9 +46,8 @@ function mergeMessages(
   const merged: DisplayItem[] = [];
   let infoIndex = 0;
 
-  // For each chat message (by index), first push any info messages that
-  // were recorded when chatMessages.length was equal to the current index.
   for (let i = 0; i < chatMessages.length; i++) {
+    // Before each chat message, insert any info messages recorded at that point.
     while (
       infoIndex < sortedInfo.length &&
       sortedInfo[infoIndex].afterChatIndex === i
@@ -51,9 +55,9 @@ function mergeMessages(
       merged.push({ type: "info", message: sortedInfo[infoIndex] });
       infoIndex++;
     }
-    merged.push({ type: "chat", message: chatMessages[i] });
+    merged.push({ type: "chat", message: chatMessages[i], index: i });
   }
-  // Append any remaining info messages (they were recorded when i === chatMessages.length)
+  // Append any remaining info messages.
   while (infoIndex < sortedInfo.length) {
     merged.push({ type: "info", message: sortedInfo[infoIndex] });
     infoIndex++;
@@ -62,10 +66,12 @@ function mergeMessages(
 }
 
 export default function Page() {
-  // The official conversation state (messages sent to the AI)
+  // The official conversation state (only user/assistant messages).
   const { messages, input, setInput, append, isLoading } = useChat();
-  // infoMessages holds our UI-only avatar–change messages.
+  // infoMessages holds our UI-only avatar–change notifications.
   const [infoMessages, setInfoMessages] = useState<InfoMessage[]>([]);
+  // assistantAvatarMap maps a chat message's index (in messages[]) to the avatar id that was active when it was received.
+  const [assistantAvatarMap, setAssistantAvatarMap] = useState<{ [index: number]: number }>({});
 
   // Refs for scrolling and for tracking the last selected avatar.
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -76,12 +82,12 @@ export default function Page() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // Scroll to bottom helper
+  // Scroll to bottom helper.
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
-  // Check scroll position on the container
+  // Simple scroll position check.
   const checkScrollPosition = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -104,7 +110,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    // Scroll to bottom whenever messages change or loading status updates.
+    // Scroll to bottom whenever messages, loading, or infoMessages change.
     const timeoutId = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timeoutId);
   }, [messages, isLoading, infoMessages]);
@@ -114,25 +120,38 @@ export default function Page() {
     if (selectedId !== lastSelectedRef.current) {
       const avatar = people.find((p) => p.id === selectedId);
       if (avatar) {
-        // Capture the current number of chat messages.
         const currentChatCount = messages.length;
         setInfoMessages((prev) => [
           ...prev,
           {
-            id: Date.now(), // unique identifier
+            id: Date.now(), // unique id
             content: `You are now speaking to ${avatar.name}`,
             afterChatIndex: currentChatCount,
+            selectedAvatarId: avatar.id,
           },
         ]);
       }
       lastSelectedRef.current = selectedId;
     }
-    // We intentionally do not include "messages" as a dependency here,
-    // so that we capture the chat count only at the time the avatar changes.
+    // We intentionally do not include messages as a dependency here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // Compute the merged display messages.
+  // When a new assistant (AI) message is appended, record the active avatar.
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastIndex = messages.length - 1;
+      const lastMessage = messages[lastIndex];
+      // Only tag new assistant messages.
+      if (lastMessage.role === "assistant" && !(lastIndex in assistantAvatarMap)) {
+        if (selectedId !== null) {
+          setAssistantAvatarMap(prev => ({ ...prev, [lastIndex]: selectedId }));
+        }
+      }
+    }
+  }, [messages, selectedId, assistantAvatarMap]);
+
+  // Merge the chat and info messages for display.
   const displayMessages = mergeMessages(messages, infoMessages);
 
   return (
@@ -140,7 +159,7 @@ export default function Page() {
       {/* Sticky header */}
       <div className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-[800px] mx-auto w-full pt-24">
-          <div className="flex flex-row items-center justify-center mb-10 w-full">
+          <div className="flex flex-row items-center justify-center w-full">
             <AnimatedTooltipPreview
               selectedId={selectedId}
               onSelect={setSelectedId}
@@ -156,7 +175,6 @@ export default function Page() {
           className="absolute inset-x-0 top-0 bottom-[140px] overflow-y-auto"
         >
           <div className="p-4">
-            {/* If no messages exist, you may show a placeholder */}
             {displayMessages.length === 0 && selectedId && (
               <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-4">
                 You are now speaking to{" "}
@@ -164,7 +182,7 @@ export default function Page() {
               </div>
             )}
 
-            {displayMessages.map((item, index) => {
+            {displayMessages.map((item) => {
               if (item.type === "info") {
                 return (
                   <div
@@ -175,25 +193,42 @@ export default function Page() {
                   </div>
                 );
               } else {
-                // Render chat messages with different styling based on role.
-                return (
-                  <div
-                    key={`chat-${index}`}
-                    className={`mb-4 flex ${
-                      item.message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
+                // For chat messages, include the avatar image for assistant messages.
+                if (item.message.role === "assistant") {
+                  const avatarId = assistantAvatarMap[item.index];
+                  const avatar = people.find((p) => p.id === avatarId);
+                  return (
                     <div
-                      className={`p-4 rounded-3xl max-w-[80%] ${
-                        item.message.role === "user"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
+                      key={`chat-${item.index}`}
+                      className="mb-4 flex items-start justify-start"
                     >
-                      {item.message.content}
+                      {avatar && (
+                        <div className="w-12 h-12 flex-shrink-0 mr-4">
+                          <img
+                            src={avatar.image}
+                            alt={avatar.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4 rounded-3xl max-w-[80%] bg-gray-100 text-gray-800">
+                        {item.message.content}
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
+                } else {
+                  // For user messages, render normally (right-aligned).
+                  return (
+                    <div
+                      key={`chat-${item.index}`}
+                      className="mb-4 flex justify-end"
+                    >
+                      <div className="p-4 rounded-3xl max-w-[80%] bg-blue-500 text-white">
+                        {item.message.content}
+                      </div>
+                    </div>
+                  );
+                }
               }
             })}
 
@@ -208,7 +243,7 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Scroll button: shows only when not at bottom and user has scrolled */}
+        {/* Scroll button */}
         {!isAtBottom && !isLoading && hasScrolled && (
           <button
             onClick={scrollToBottom}
@@ -224,7 +259,7 @@ export default function Page() {
             value={input}
             onChange={setInput}
             onSubmit={() => {
-              // Append a user message to the conversation (which triggers an AI response).
+              // Append a user message (which triggers an AI response).
               append({ content: input, role: "user" });
               setInput("");
             }}

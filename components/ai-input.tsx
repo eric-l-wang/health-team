@@ -50,6 +50,7 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                                 handleSubmit();
                             }
                         }}
+                        enterKeyHint="send"
                         disabled={isLoading}
                     />
                     <button

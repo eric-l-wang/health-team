@@ -61,9 +61,9 @@ export const AnimatedTooltip = ({
     return newOrder;
   }, [items, selectedId]);
 
-  // Show tooltip for both hover and selection
+  // Show tooltip for both hover and selection, with hover taking precedence
   const showTooltipFor = (itemId: number) => 
-    hoveredIndex === itemId || selectedId === itemId;
+    hoveredIndex === itemId || (selectedId === itemId && hoveredIndex === null);
 
   return (
     <div className={cn("flex items-center justify-center gap-2 relative", className)}>
@@ -79,15 +79,13 @@ export const AnimatedTooltip = ({
             damping: 30
           }}
           className="-mr-4 relative group cursor-pointer"
-          onMouseEnter={() => !selectedId && setHoveredIndex(item.id)}
-          onMouseLeave={() => !selectedId && setHoveredIndex(null)}
+          onMouseEnter={() => setHoveredIndex(item.id)}
+          onMouseLeave={() => setHoveredIndex(null)}
           onClick={() => {
             if (selectedId === item.id) {
               onSelect?.(0); // Deselect if clicking same avatar
-              setHoveredIndex(null);
             } else {
               onSelect?.(item.id);
-              setHoveredIndex(null);
             }
           }}
         >
