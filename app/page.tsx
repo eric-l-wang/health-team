@@ -158,7 +158,7 @@ export default function Page() {
     <div className="flex flex-col min-h-screen">
       {/* Sticky header */}
       <div className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-[800px] mx-auto w-full pt-24">
+        <div className="max-w-[800px] mx-auto w-full pt-24 md:pt-24"> {/* Adjusted padding */}
           <div className="flex flex-row items-center justify-center w-full">
             <AnimatedTooltipPreview
               selectedId={selectedId}
