@@ -1,6 +1,6 @@
 "use client";
 
-import { CornerRightUp } from "lucide-react";
+import { ArrowUp } from "lucide-react"; // Change import from CornerRightUp to ArrowUp
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -28,14 +28,17 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
     };
 
     return (
-        <div className="w-full px-4 py-3">
+        <div
+            className="w-full px-4 py-3 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm"
+            style={{ WebkitBackdropFilter: 'blur(4px)' }}
+        >
             <div className="relative w-full mx-auto flex items-start flex-col gap-2">
                 <div className="relative w-full mx-auto">
                     <Textarea
                         id="ai-input-07"
-                        placeholder="Ask me anything!"
+                        placeholder="Need advice? Ask your care team!"
                         className={cn(
-                            "w-full bg-black/5 dark:bg-white/5 rounded-xl pl-6 pr-10 py-4 placeholder:text-black/70 dark:placeholder:text-white/70 border-none ring-black/30 dark:ring-white/30 text-black dark:text-white resize-none text-wrap leading-[1.2]",
+                            "w-full bg-black/5 dark:bg-white/5 rounded-xl pl-6 pr-10 py-4 placeholder:text-black/70 dark:placeholder:text-white/70 border-none focus:ring-0 focus:outline-none text-black dark:text-white resize-none text-wrap leading-[1.2]",
                             "min-h-[56px]"
                         )}
                         ref={textareaRef}
@@ -56,8 +59,10 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                     <button
                         onClick={handleSubmit}
                         className={cn(
-                            "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl py-1 px-1",
-                            isLoading ? "bg-none" : "bg-black/5 dark:bg-white/5"
+                            "absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2",
+                            isLoading 
+                              ? "bg-none" 
+                              : "bg-black dark:bg-white hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
                         )}
                         type="button"
                         disabled={isLoading || !value.trim()}
@@ -68,12 +73,7 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                                 style={{ animationDuration: "3s" }}
                             />
                         ) : (
-                            <CornerRightUp
-                                className={cn(
-                                    "w-4 h-4 transition-opacity dark:text-white",
-                                    value ? "opacity-100" : "opacity-30"
-                                )}
-                            />
+                            <ArrowUp className="w-4 h-4 text-white dark:text-black" />
                         )}
                     </button>
                 </div>

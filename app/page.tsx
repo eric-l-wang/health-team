@@ -80,7 +80,8 @@ export default function Page() {
 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number>(1); // Initialize with John Doe's ID (1)
+  const [enableOverlap, setEnableOverlap] = useState(false);
 
   // Scroll to bottom helper.
   const scrollToBottom = () => {
@@ -92,9 +93,13 @@ export default function Page() {
     const container = containerRef.current;
     if (!container) return;
     const atBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 30;
+      container.scrollHeight - container.scrollTop - container.clientHeight < 50; // Adjusted from 30 to 50
     setIsAtBottom(atBottom);
     if (!atBottom) setHasScrolled(true);
+
+    // Enable overlap only if content is taller
+    const isScrollable = container.scrollHeight > container.clientHeight;
+    setEnableOverlap(isScrollable);
   };
 
   useEffect(() => {
@@ -115,6 +120,12 @@ export default function Page() {
     return () => clearTimeout(timeoutId);
   }, [messages, isLoading, infoMessages]);
 
+  useEffect(() => {
+    if (containerRef.current) {
+      checkScrollPosition(); // Initialize overlap on mount
+    }
+  }, []);
+
   // When the selected avatar changes, record an info message.
   useEffect(() => {
     if (selectedId !== lastSelectedRef.current) {
@@ -125,7 +136,7 @@ export default function Page() {
           ...prev,
           {
             id: Date.now(), // unique id
-            content: `You are now speaking to ${avatar.name}`,
+            content: `You are now speaking to ${avatar.name}, your ${avatar.designation.toLowerCase()}`,
             afterChatIndex: currentChatCount,
             selectedAvatarId: avatar.id,
           },
@@ -151,14 +162,32 @@ export default function Page() {
     }
   }, [messages, selectedId, assistantAvatarMap]);
 
+  // Handle mobile viewport height
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  }, []);
+
   // Merge the chat and info messages for display.
   const displayMessages = mergeMessages(messages, infoMessages);
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-[800px] mx-auto w-full pt-24 md:pt-24"> {/* Adjusted padding */}
+    <div className="flex flex-col h-[100vh] h-[calc(var(--vh,1vh)*100)] max-h-[100vh] max-h-[calc(var(--vh,1vh)*100)]">
+      {/* Sticky header with backdrop-blur */}
+      <div className="sticky top-0 z-50 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-800/50">
+      
+        <div className="max-w-[800px] mx-auto w-full pt-24 md:pt-24">
           <div className="flex flex-row items-center justify-center w-full">
             <AnimatedTooltipPreview
               selectedId={selectedId}
@@ -168,103 +197,105 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="max-w-[800px] w-full mx-auto flex flex-col flex-1 relative">
-        {/* Messages container */}
-        <div
-          ref={containerRef}
-          className="absolute inset-x-0 top-0 bottom-[140px] overflow-y-auto"
-        >
-          <div className="p-4">
-            {displayMessages.length === 0 && selectedId && (
-              <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-4">
-                You are now speaking to{" "}
-                {people.find((p) => p.id === selectedId)?.name}
-              </div>
-            )}
+      {/* Main content behind header */}
+      <div className={`flex-1 flex flex-col overflow-hidden ${enableOverlap ? '-mt-16 pt-12' : ''}`}>
+        <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative bg-transparent">
+          {/* Messages container */}
+          <div
+            ref={containerRef}
+            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-auto"
+          >
+            <div className="p-4">
+              {displayMessages.length === 0 && selectedId && (
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-4">
+                  You are now speaking to{" "}
+                  {people.find((p) => p.id === selectedId)?.name}
+                </div>
+              )}
 
-            {displayMessages.map((item) => {
-              if (item.type === "info") {
-                return (
-                  <div
-                    key={`info-${item.message.id}`}
-                    className="text-center text-sm text-gray-500 dark:text-gray-400 my-4"
-                  >
-                    {item.message.content}
-                  </div>
-                );
-              } else {
-                // For chat messages, include the avatar image for assistant messages.
-                if (item.message.role === "assistant") {
-                  const avatarId = assistantAvatarMap[item.index];
-                  const avatar = people.find((p) => p.id === avatarId);
+              {displayMessages.map((item) => {
+                if (item.type === "info") {
                   return (
                     <div
-                      key={`chat-${item.index}`}
-                      className="mb-4 flex items-start justify-start"
+                      key={`info-${item.message.id}`}
+                      className="text-center text-sm text-gray-500 dark:text-gray-400 my-4"
                     >
-                      {avatar && (
-                        <div className="w-12 h-12 flex-shrink-0 mr-4">
-                          <img
-                            src={avatar.image}
-                            alt={avatar.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="p-4 rounded-3xl max-w-[80%] bg-gray-100 text-gray-800">
-                        {item.message.content}
-                      </div>
+                      {item.message.content}
                     </div>
                   );
                 } else {
-                  // For user messages, render normally (right-aligned).
-                  return (
-                    <div
-                      key={`chat-${item.index}`}
-                      className="mb-4 flex justify-end"
-                    >
-                      <div className="p-4 rounded-3xl max-w-[80%] bg-blue-500 text-white">
-                        {item.message.content}
+                  // For chat messages, include the avatar image for assistant messages.
+                  if (item.message.role === "assistant") {
+                    const avatarId = assistantAvatarMap[item.index];
+                    const avatar = people.find((p) => p.id === avatarId);
+                    return (
+                      <div
+                        key={`chat-${item.index}`}
+                        className="mb-4 flex items-start justify-start"
+                      >
+                        {avatar && (
+                          <div className="w-12 h-12 flex-shrink-0 mr-4">
+                            <img
+                              src={avatar.image}
+                              alt={avatar.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="py-1 max-w-[80%] text-gray-800 dark:text-gray-200">
+                          {item.message.content}
+                        </div>
                       </div>
-                    </div>
-                  );
+                    );
+                  } else {
+                    // For user messages, render normally (right-aligned).
+                    return (
+                      <div
+                        key={`chat-${item.index}`}
+                        className="mb-4 flex justify-end"
+                      >
+                        <div className="px-4 py-3 rounded-3xl max-w-[80%] bg-blue-500 text-white">
+                          {item.message.content}
+                        </div>
+                      </div>
+                    );
+                  }
                 }
-              }
-            })}
+              })}
 
-            {isLoading &&
-              messages[messages.length - 1]?.role !== "assistant" && (
-                <div className="mb-4 flex justify-start">
-                  <MessageLoading />
-                </div>
-              )}
-            {/* Scroll anchor */}
-            <div ref={messagesEndRef} />
+              {isLoading &&
+                messages[messages.length - 1]?.role !== "assistant" && (
+                  <div className="mb-4 flex justify-start">
+                    <MessageLoading />
+                  </div>
+                )}
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </div>
 
-        {/* Scroll button */}
-        {!isAtBottom && !isLoading && hasScrolled && (
-          <button
-            onClick={scrollToBottom}
-            className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-10 bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 rounded-full p-2 shadow-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-        )}
+          {/* Scroll button */}
+          {!isAtBottom && !isLoading && hasScrolled && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-[150px] left-1/2 -translate-x-1/2 z-10 bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 rounded-full p-2 shadow-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
+          )}
 
-        {/* Input container */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-black">
-          <AIInput
-            value={input}
-            onChange={setInput}
-            onSubmit={() => {
-              // Append a user message (which triggers an AI response).
-              append({ content: input, role: "user" });
-              setInput("");
-            }}
-            isLoading={isLoading}
-          />
+          {/* Input container - make container transparent */}
+          <div className="absolute bottom-0 left-0 right-0 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm">
+            <AIInput
+              value={input}
+              onChange={setInput}
+              onSubmit={() => {
+                append({ content: input, role: "user" });
+                setInput("");
+              }}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </div>
     </div>
