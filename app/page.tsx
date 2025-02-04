@@ -183,10 +183,9 @@ export default function Page() {
   const displayMessages = mergeMessages(messages, infoMessages);
 
   return (
-    <div className="flex flex-col h-[100vh] h-[calc(var(--vh,1vh)*100)] max-h-[100vh] max-h-[calc(var(--vh,1vh)*100)]">
-      {/* Sticky header with backdrop-blur */}
-      <div className="sticky top-0 z-50 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] bg-blue-500 bg-opacity-10 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-800/50 pr-2">
-      
+    <div className="flex flex-col h-[100vh] h-[calc(var(--vh,1vh)*100)] max-h-[100vh] max-h-[calc(var(--vh,1vh)*100)] bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+      {/* Sticky header with new styling */}
+      <div className="sticky top-0 z-50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-200/30 dark:border-slate-800/30">
         <div className="max-w-[800px] mx-auto w-full pt-20 md:pt-20">
           <div className="flex flex-row w-full">
             <AnimatedTooltipPreview
@@ -199,11 +198,11 @@ export default function Page() {
 
       {/* Main content behind header */}
       <div className={`flex-1 flex flex-col overflow-hidden ${enableOverlap ? '-mt-16 pt-12' : ''}`}>
-        <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative bg-transparent">
+        <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative">
           {/* Messages container */}
           <div
             ref={containerRef}
-            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-auto"
+            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-auto "
           >
             <div className="p-4">
               {displayMessages.length === 0 && selectedId && (

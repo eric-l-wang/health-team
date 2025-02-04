@@ -38,8 +38,8 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
     };
 
     return (
-        <div className="w-full px-4 py-3 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm">
-            <div className="relative w-full mx-auto flex items-start flex-col gap-2">
+        <div className="w-full px-4 py-4 backdrop-blur">
+            <div className="relative w-full mx-auto flex items-start flex-col gap-3">
                 <div className="relative w-full mx-auto">
                     <Textarea
                         ref={textareaRef}
@@ -47,13 +47,13 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                         id="ai-input-07"
                         placeholder="Need advice? Ask your care team!"
                         className={cn(
-                            "w-full bg-black/5 dark:bg-white/5 rounded-xl pl-6 pr-12",
-                            "placeholder:text-black/70 dark:placeholder:text-white/70",
-                            "border-none focus:ring-0 focus:outline-none",
-                            "text-black dark:text-white resize-none",
+                            "w-full bg-slate-100/50 dark:bg-slate-800/50 rounded-2xl pl-6 pr-12",
+                            "placeholder:text-slate-500/70 dark:placeholder:text-slate-400/70",
+                            "border-none focus:ring-2 focus:ring-blue-400/30 focus:outline-none",
+                            "text-slate-700 dark:text-slate-200 resize-none",
                             "max-h-[200px] overflow-y-auto",
-                            "text-base md:text-sm py-3", // Increase font size on mobile
-                            "leading-5" // Tighter line height
+                            "text-base md:text-sm py-3.5",
+                            "leading-relaxed"
                         )}
                         style={{ fontSize: '16px' }} // Prevent zoom on iOS
                         value={value}
@@ -70,10 +70,10 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                     <button
                         onClick={handleSubmit}
                         className={cn(
-                            "absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2",
+                            "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-2.5",
                             isLoading 
                               ? "bg-none" 
-                              : "bg-black dark:bg-white hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                              : "bg-blue-500 hover:bg-blue-600 transition-colors"
                         )}
                         style={{ transform: 'translate(0, -50%)' }} // Ensure button stays centered
                         type="button"
@@ -88,11 +88,11 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.499 5.499 0 0112 5.09 5.499 5.499 0 0122 8.5c0 3.78-3.4 6.86-8.55 11.53L12 21.35z" />
                             </svg>
                         ) : (
-                            <ArrowUp className="w-4 h-4 text-white dark:text-black" />
+                            <ArrowUp className="w-4 h-4 text-white" />
                         )}
                     </button>
                 </div>
-                <p className="text-xs text-center w-full text-black/70 dark:text-white/70">
+                <p className="text-xs text-center w-full text-slate-500/80 dark:text-slate-400/80">
                     AI can make mistakes. This should not substitute for professional medical advice.
                 </p>
             </div>
