@@ -234,7 +234,7 @@ export default function Page() {
                         className="mb-4 flex items-start justify-start"
                       >
                         {avatar && (
-                          <div className="w-12 h-12 flex-shrink-0 mr-4">
+                          <div className="w-8 h-8 flex-shrink-0 mr-3"> {/* Changed from w-12 h-12 to w-8 h-8 and mr-4 to mr-3 */}
                             <img
                               src={avatar.image}
                               alt={avatar.name}
