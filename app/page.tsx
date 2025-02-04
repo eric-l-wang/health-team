@@ -2,10 +2,10 @@
 
 import { useChat } from "ai/react";
 import { AIInput } from "@/components/ai-input";
-import { MessageLoading } from "@/components/message-loading";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatedTooltipPreview, people } from "@/components/selectable-avatars";
+import LoaderOne from "@/components/ui/loader-dots";
 
 //
 // Types for our info messages and for the merged display items.
@@ -185,10 +185,10 @@ export default function Page() {
   return (
     <div className="flex flex-col h-[100vh] h-[calc(var(--vh,1vh)*100)] max-h-[100vh] max-h-[calc(var(--vh,1vh)*100)]">
       {/* Sticky header with backdrop-blur */}
-      <div className="sticky top-0 z-50 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-800/50">
+      <div className="sticky top-0 z-50 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] bg-blue-500 bg-opacity-10 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-800/50 pr-2">
       
-        <div className="max-w-[800px] mx-auto w-full pt-24 md:pt-24">
-          <div className="flex flex-row items-center justify-center w-full">
+        <div className="max-w-[800px] mx-auto w-full pt-20 md:pt-20">
+          <div className="flex flex-row w-full">
             <AnimatedTooltipPreview
               selectedId={selectedId}
               onSelect={setSelectedId}
@@ -266,7 +266,7 @@ export default function Page() {
               {isLoading &&
                 messages[messages.length - 1]?.role !== "assistant" && (
                   <div className="mb-4 flex justify-start">
-                    <MessageLoading />
+                    <LoaderOne />
                   </div>
                 )}
               {/* Scroll anchor */}

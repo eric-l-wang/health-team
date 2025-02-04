@@ -109,14 +109,16 @@ export const AnimatedTooltip = ({
                   rotate: rotate,
                   whiteSpace: "nowrap",
                 }}
-                className="absolute -top-16 -left-[65%] translate-x-1/2 flex text-xs flex-col items-center justify-center rounded-md bg-foreground z-50 shadow-xl px-4 py-2"
+                className={cn(
+                  "absolute -top-16 flex text-xs flex-col items-center justify-center rounded-md bg-blue-500 z-50 px-4 py-2 bg-opacity-0",
+
+                  "right-[10%] left-[10%]",
+                )}
               >
-                <div className="absolute inset-x-10 z-30 w-[20%] -bottom-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent h-px" />
-                <div className="absolute left-10 w-[40%] z-30 -bottom-px bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px" />
-                <div className="font-bold text-background relative z-30 text-base">
+                <div className="font-bold text-black relative z-30 text-base">
                   {item.name}
                 </div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-black/80 text-xs">
                   {item.designation}
                 </div>
               </motion.div>

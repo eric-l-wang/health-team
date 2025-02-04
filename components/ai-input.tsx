@@ -80,10 +80,13 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                         disabled={isLoading || !value.trim()}
                     >
                         {isLoading ? (
-                            <div
-                                className="w-4 h-4 bg-black dark:bg-white rounded-sm animate-spin transition duration-700"
-                                style={{ animationDuration: "3s" }}
-                            />
+                            <svg
+                                className="w-5 h-5 text-blue-500 animate-pulse" // Increased from w-4 h-4
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                            >
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.499 5.499 0 0112 5.09 5.499 5.499 0 0122 8.5c0 3.78-3.4 6.86-8.55 11.53L12 21.35z" />
+                            </svg>
                         ) : (
                             <ArrowUp className="w-4 h-4 text-white dark:text-black" />
                         )}
