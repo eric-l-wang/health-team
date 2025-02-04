@@ -47,7 +47,7 @@ function mergeMessages(
   let infoIndex = 0;
 
   for (let i = 0; i < chatMessages.length; i++) {
-    // Before each chat message, insert any info messages recorded at that point.
+    // Insert any info messages recorded at this point.
     while (
       infoIndex < sortedInfo.length &&
       sortedInfo[infoIndex].afterChatIndex === i
@@ -92,14 +92,13 @@ export default function Page() {
   const checkScrollPosition = () => {
     const container = containerRef.current;
     if (!container) return;
-    const atBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 50; // Adjusted from 30 to 50
-    setIsAtBottom(atBottom);
-    if (!atBottom) setHasScrolled(true);
 
-    // Enable overlap only if content is taller
-    const isScrollable = container.scrollHeight > container.clientHeight;
-    setEnableOverlap(isScrollable);
+    const distanceFromBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
+
+    const atBottom = distanceFromBottom < 50;
+    setIsAtBottom(atBottom);
+    if (!atBottom && !hasScrolled) setHasScrolled(true);
   };
 
   useEffect(() => {
@@ -156,26 +155,26 @@ export default function Page() {
       // Only tag new assistant messages.
       if (lastMessage.role === "assistant" && !(lastIndex in assistantAvatarMap)) {
         if (selectedId !== null) {
-          setAssistantAvatarMap(prev => ({ ...prev, [lastIndex]: selectedId }));
+          setAssistantAvatarMap((prev) => ({ ...prev, [lastIndex]: selectedId }));
         }
       }
     }
   }, [messages, selectedId, assistantAvatarMap]);
 
-  // Handle mobile viewport height
+  // Handle mobile viewport height.
   useEffect(() => {
     const setVH = () => {
       const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
 
     setVH();
-    window.addEventListener('resize', setVH);
-    window.addEventListener('orientationchange', setVH);
+    window.addEventListener("resize", setVH);
+    window.addEventListener("orientationchange", setVH);
 
     return () => {
-      window.removeEventListener('resize', setVH);
-      window.removeEventListener('orientationchange', setVH);
+      window.removeEventListener("resize", setVH);
+      window.removeEventListener("orientationchange", setVH);
     };
   }, []);
 
@@ -184,31 +183,30 @@ export default function Page() {
 
   return (
     <div className="flex flex-col h-[100vh] h-[calc(var(--vh,1vh)*100)] max-h-[100vh] max-h-[calc(var(--vh,1vh)*100)] bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-      {/* Sticky header with new styling */}
-      <div className="sticky top-0 z-50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-200/30 dark:border-slate-800/30">
+      {/* Change header from sticky to fixed */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-200/30 dark:border-slate-800/30">
         <div className="max-w-[800px] mx-auto w-full pt-20 md:pt-20">
           <div className="flex flex-row w-full">
-            <AnimatedTooltipPreview
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+            <AnimatedTooltipPreview selectedId={selectedId} onSelect={setSelectedId} />
           </div>
         </div>
       </div>
 
       {/* Main content behind header */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${enableOverlap ? '-mt-16 pt-12' : ''}`}>
+      {/* Note: we use overflow-y-visible here so that chat messages may extend above the header */}
+      <div className={`flex-1 flex flex-col overflow-y-visible pt-40 ${enableOverlap ? "-mt-16 pt-12" : ""}`}>
+        {/* This wrapper is relatively positioned so we can add a bottom overlay mask */}
         <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative">
-          {/* Messages container */}
+          {/* Chat messages container – absolutely positioned with its bottom set above the input area.
+              It scrolls (overflow-y-auto) so that content stays within its boundaries. */}
           <div
             ref={containerRef}
-            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-auto "
+            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-visible"
           >
             <div className="p-4">
               {displayMessages.length === 0 && selectedId && (
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-4">
-                  You are now speaking to{" "}
-                  {people.find((p) => p.id === selectedId)?.name}
+                  You are now speaking to {people.find((p) => p.id === selectedId)?.name}
                 </div>
               )}
 
@@ -228,12 +226,9 @@ export default function Page() {
                     const avatarId = assistantAvatarMap[item.index];
                     const avatar = people.find((p) => p.id === avatarId);
                     return (
-                      <div
-                        key={`chat-${item.index}`}
-                        className="mb-4 flex items-start justify-start"
-                      >
+                      <div key={`chat-${item.index}`} className="mb-4 flex items-start justify-start">
                         {avatar && (
-                          <div className="w-8 h-8 flex-shrink-0 mr-3"> {/* Changed from w-12 h-12 to w-8 h-8 and mr-4 to mr-3 */}
+                          <div className="w-8 h-8 flex-shrink-0 mr-3">
                             <img
                               src={avatar.image}
                               alt={avatar.name}
@@ -249,10 +244,7 @@ export default function Page() {
                   } else {
                     // For user messages, render normally (right-aligned).
                     return (
-                      <div
-                        key={`chat-${item.index}`}
-                        className="mb-4 flex justify-end"
-                      >
+                      <div key={`chat-${item.index}`} className="mb-4 flex justify-end">
                         <div className="px-4 py-3 rounded-3xl max-w-[80%] bg-blue-500 text-white">
                           {item.message.content}
                         </div>
@@ -262,29 +254,29 @@ export default function Page() {
                 }
               })}
 
-              {isLoading &&
-                messages[messages.length - 1]?.role !== "assistant" && (
-                  <div className="mb-4 flex justify-start">
-                    <LoaderOne />
-                  </div>
-                )}
+              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+                <div className="mb-4 flex justify-start">
+                  <LoaderOne />
+                </div>
+              )}
               {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="pb-32"/>
             </div>
           </div>
-
-          {/* Scroll button */}
-          {!isAtBottom && !isLoading && hasScrolled && (
+          {/* Fixed scroll-to-bottom button */}
+          {!isAtBottom && !isLoading && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-[150px] left-1/2 -translate-x-1/2 z-10 bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 rounded-full p-2 shadow-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
+              className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 rounded-full p-2 shadow-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
             >
               <ChevronDown className="w-5 h-5" />
             </button>
           )}
 
-          {/* Input container - make container transparent */}
-          <div className="absolute bottom-0 left-0 right-0 bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(0,0,0,0.5)] backdrop-blur-sm">
+          {/* Input container – fixed at the bottom.
+              Its z-index is higher than the overlay so it remains fully visible.
+          */}
+          <div className="fixed bottom-0 left-0 right-0 z-30 w-full flex-1 flex flex-col">
             <AIInput
               value={input}
               onChange={setInput}
