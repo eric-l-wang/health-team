@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowUp } from "lucide-react";
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ interface AIInputProps {
 
 export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
     const defaultRows = 1;
     const MAX_HEIGHT = 200; // Add max height constant
 
@@ -31,7 +33,10 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
     const handleSubmit = () => {
         if (value.trim()) {
             onSubmit();
+            // Simple reset
+            setIsFocused(false);
             if (textareaRef.current) {
+                textareaRef.current.blur();
                 textareaRef.current.style.height = "auto";
             }
         }
@@ -47,8 +52,19 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                 }}
             />
             <div className="relative">
-                <div className="relative w-full flex items-center flex-col gap-3">
-                    <div className="relative w-full max-w-[800px]">
+                {/* Wrap input container with motion.div to animate width */}
+                <motion.div
+                    className="relative mx-auto pb-3"
+                    // Change initial width from "40%" to "300px" (or adjust as needed for your design)
+                    animate={{ width: isFocused ? "100%" : "350px" }}
+                    transition={
+                        isFocused 
+                            ? { type: "spring", stiffness: 90, damping: 14 }
+                            : { type: "spring", stiffness: 120, damping: 14 }
+                    }
+                    style={{ maxWidth: "800px" }}
+                >
+                    <div className="relative">
                         <Textarea
                             ref={textareaRef}
                             rows={defaultRows}
@@ -58,7 +74,7 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                                 // Removed transparency to have full opacity background:
                                 "w-full bg-slate-100 dark:bg-slate-800 rounded-2xl pl-6 pr-12",
                                 "placeholder:text-slate-500/70 dark:placeholder:text-slate-400/70",
-                                "border-none focus:ring-2 focus:ring-blue-400/30 focus:outline-none",
+                                "border-none",
                                 "text-slate-700 dark:text-slate-200 resize-none",
                                 "max-h-[200px] overflow-hidden",
                                 "text-base md:text-sm py-3.5",
@@ -67,8 +83,10 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                             style={{ fontSize: '16px' }} // Prevent zoom on iOS
                             value={value}
                             onChange={handleInput}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
                             onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey && value.trim()) {
+                                if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
                                     handleSubmit();
                                 }
@@ -79,10 +97,11 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                         <button
                             onClick={handleSubmit}
                             className={cn(
-                                "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-2.5",
+                                // Update button rounded corners from rounded-2xl to rounded-3xl for extra roundness:
+                                "absolute right-3 top-1/2 -translate-y-1/2 rounded-3xl p-2.5",
                                 isLoading 
-                                ? "bg-none" 
-                                : "bg-blue-500 hover:bg-blue-600 transition-colors"
+                                  ? "bg-none" 
+                                  : "bg-blue-500 hover:bg-blue-600 transition-colors"
                             )}
                             style={{ transform: 'translate(0, -50%)' }} // Ensure button stays centered
                             type="button"
@@ -101,10 +120,10 @@ export function AIInput({ value, onChange, onSubmit, isLoading }: AIInputProps) 
                             )}
                         </button>
                     </div>
-                    <p className="text-xs text-center w-full text-slate-500/80 dark:text-slate-400/80">
-                        AI can make mistakes. This should not substitute for professional medical advice.
-                    </p>
-                </div>
+                </motion.div>
+                <p className="text-xs text-center w-full text-slate-500/80 dark:text-slate-400/80">
+                    AI can make mistakes. This should not substitute for professional medical advice.
+                </p>
             </div>
         </div>
     );

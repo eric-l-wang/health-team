@@ -2,7 +2,7 @@
 
 import { useChat } from "ai/react";
 import { AIInput } from "@/components/ai-input";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatedTooltipPreview, people } from "@/components/selectable-avatars";
 import LoaderOne from "@/components/ui/loader-dots";
@@ -88,15 +88,14 @@ export default function Page() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
-  // Simple scroll position check.
+  // Modify the scroll position check threshold (lower value) 
   const checkScrollPosition = () => {
     const container = containerRef.current;
     if (!container) return;
-
     const distanceFromBottom =
       container.scrollHeight - (container.scrollTop + container.clientHeight);
-
-    const atBottom = distanceFromBottom < 50;
+    // Lower threshold for earlier auto scrolling on mobile.
+    const atBottom = distanceFromBottom < 20;
     setIsAtBottom(atBottom);
     if (!atBottom && !hasScrolled) setHasScrolled(true);
   };
@@ -113,10 +112,10 @@ export default function Page() {
     }
   }, []);
 
-  useEffect(() => {
-    // Scroll to bottom whenever messages, loading, or infoMessages change.
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
+  useLayoutEffect(() => {
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
   }, [messages, isLoading, infoMessages]);
 
   useEffect(() => {
@@ -197,11 +196,10 @@ export default function Page() {
       <div className={`flex-1 flex flex-col overflow-y-visible pt-40 ${enableOverlap ? "-mt-16 pt-12" : ""}`}>
         {/* This wrapper is relatively positioned so we can add a bottom overlay mask */}
         <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative">
-          {/* Chat messages container – absolutely positioned with its bottom set above the input area.
-              It scrolls (overflow-y-auto) so that content stays within its boundaries. */}
+          {/* Chat messages container – change overflow-y-visible to overflow-y-auto */}
           <div
             ref={containerRef}
-            className="absolute inset-x-0 top-0 bottom-[120px] overflow-y-visible"
+            className="absolute inset-x-0 top-0 bottom-[100px] overflow-y-auto"  // modified here
           >
             <div className="p-4">
               {displayMessages.length === 0 && selectedId && (
@@ -260,7 +258,7 @@ export default function Page() {
                 </div>
               )}
               {/* Scroll anchor */}
-              <div ref={messagesEndRef} className="pb-32"/>
+              <div ref={messagesEndRef} className="pb-8"/>
             </div>
           </div>
           {/* Fixed scroll-to-bottom button */}
