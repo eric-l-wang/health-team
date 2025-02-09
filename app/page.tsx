@@ -4,8 +4,12 @@ import { useChat } from "ai/react";
 import { AIInput } from "@/components/ai-input";
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import { AnimatedTooltipPreview, people } from "@/components/selectable-avatars";
+import {
+  AnimatedTooltipPreview,
+  people,
+} from "@/components/selectable-avatars";
 import LoaderOne from "@/components/ui/loader-dots";
+import ReactMarkdown from "react-markdown";
 
 //
 // Types for our info messages and for the merged display items.
@@ -71,7 +75,9 @@ export default function Page() {
   // infoMessages holds our UI-only avatar–change notifications.
   const [infoMessages, setInfoMessages] = useState<InfoMessage[]>([]);
   // assistantAvatarMap maps a chat message's index (in messages[]) to the avatar id that was active when it was received.
-  const [assistantAvatarMap, setAssistantAvatarMap] = useState<{ [index: number]: number }>({});
+  const [assistantAvatarMap, setAssistantAvatarMap] = useState<{
+    [index: number]: number;
+  }>({});
 
   // Refs for scrolling and for tracking the last selected avatar.
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -85,10 +91,13 @@ export default function Page() {
 
   // Scroll to bottom helper.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   };
 
-  // Modify the scroll position check threshold (lower value) 
+  // Modify the scroll position check threshold (lower value)
   const checkScrollPosition = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -134,7 +143,9 @@ export default function Page() {
           ...prev,
           {
             id: Date.now(), // unique id
-            content: `You are now speaking to ${avatar.name}, your ${avatar.designation.toLowerCase()}`,
+            content: `You are now speaking to ${
+              avatar.name
+            }, your ${avatar.designation.toLowerCase()}`,
             afterChatIndex: currentChatCount,
             selectedAvatarId: avatar.id,
           },
@@ -152,9 +163,15 @@ export default function Page() {
       const lastIndex = messages.length - 1;
       const lastMessage = messages[lastIndex];
       // Only tag new assistant messages.
-      if (lastMessage.role === "assistant" && !(lastIndex in assistantAvatarMap)) {
+      if (
+        lastMessage.role === "assistant" &&
+        !(lastIndex in assistantAvatarMap)
+      ) {
         if (selectedId !== null) {
-          setAssistantAvatarMap((prev) => ({ ...prev, [lastIndex]: selectedId }));
+          setAssistantAvatarMap((prev) => ({
+            ...prev,
+            [lastIndex]: selectedId,
+          }));
         }
       }
     }
@@ -186,34 +203,43 @@ export default function Page() {
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-200/30 dark:border-slate-800/30">
         <div className="max-w-[800px] mx-auto w-full pt-20 md:pt-20">
           <div className="flex flex-row w-full">
-            <AnimatedTooltipPreview selectedId={selectedId} onSelect={setSelectedId} />
+            <AnimatedTooltipPreview
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
           </div>
         </div>
       </div>
 
       {/* Main content behind header */}
       {/* Note: we use overflow-y-visible here so that chat messages may extend above the header */}
-      <div className={`flex-1 flex flex-col overflow-y-visible pt-40 ${enableOverlap ? "-mt-16 pt-12" : ""}`}>
+      <div
+        className={`flex-1 flex flex-col overflow-y-visible pt-40 ${
+          enableOverlap ? "-mt-16 pt-12" : ""
+        }`}
+      >
         {/* This wrapper is relatively positioned so we can add a bottom overlay mask */}
         <div className="max-w-[800px] w-full mx-auto flex-1 flex flex-col relative">
           {/* Chat messages container – change overflow-y-visible to overflow-y-auto */}
           <div
             ref={containerRef}
-            className="absolute inset-x-0 top-0 bottom-[100px] overflow-y-auto"  // modified here
+            className="absolute inset-x-0 top-0 bottom-[100px] overflow-y-auto" // modified here
           >
             <div className="p-4">
-              {displayMessages.length === 0 && selectedId && (
-                <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-4">
-                  You are now speaking to {people.find((p) => p.id === selectedId)?.name}
+              {/* Show placeholder when no actual chat messages have been sent */}
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center pt-16 justify-center h-full my-8">
+                  <h1 className="text-3xl font-bold text-wrap">
+                    How can we help?
+                  </h1>
                 </div>
               )}
-
               {displayMessages.map((item) => {
                 if (item.type === "info") {
                   return (
                     <div
                       key={`info-${item.message.id}`}
-                      className="text-center text-sm text-gray-500 dark:text-gray-400 my-4"
+                      className="text-center text-sm text-gray-500 dark:text-gray-400 my-4 max-w-[350px] mx-auto break-words"
                     >
                       {item.message.content}
                     </div>
@@ -224,7 +250,10 @@ export default function Page() {
                     const avatarId = assistantAvatarMap[item.index];
                     const avatar = people.find((p) => p.id === avatarId);
                     return (
-                      <div key={`chat-${item.index}`} className="mb-4 flex items-start justify-start">
+                      <div
+                        key={`chat-${item.index}`}
+                        className="mb-4 flex items-start justify-start"
+                      >
                         {avatar && (
                           <div className="w-8 h-8 flex-shrink-0 mr-3">
                             <img
@@ -235,16 +264,19 @@ export default function Page() {
                           </div>
                         )}
                         <div className="py-1 max-w-[80%] text-gray-800 dark:text-gray-200">
-                          {item.message.content}
+                          <ReactMarkdown>{item.message.content}</ReactMarkdown>
                         </div>
                       </div>
                     );
                   } else {
                     // For user messages, render normally (right-aligned).
                     return (
-                      <div key={`chat-${item.index}`} className="mb-4 flex justify-end">
+                      <div
+                        key={`chat-${item.index}`}
+                        className="mb-4 flex justify-end"
+                      >
                         <div className="px-4 py-3 rounded-3xl max-w-[80%] bg-blue-500 text-white">
-                          {item.message.content}
+                          <ReactMarkdown>{item.message.content}</ReactMarkdown>
                         </div>
                       </div>
                     );
@@ -252,20 +284,21 @@ export default function Page() {
                 }
               })}
 
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-                <div className="mb-4 flex justify-start">
-                  <LoaderOne />
-                </div>
-              )}
+              {isLoading &&
+                messages[messages.length - 1]?.role !== "assistant" && (
+                  <div className="mb-4 flex justify-start">
+                    <LoaderOne />
+                  </div>
+                )}
               {/* Scroll anchor */}
-              <div ref={messagesEndRef} className="pb-8"/>
+              <div ref={messagesEndRef} className="pb-8" />
             </div>
           </div>
           {/* Fixed scroll-to-bottom button */}
           {!isAtBottom && !isLoading && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 rounded-full p-2 shadow-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
+              className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 bg-white text-black border border-gray-200 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-all"
             >
               <ChevronDown className="w-5 h-5" />
             </button>
