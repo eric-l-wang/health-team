@@ -298,7 +298,7 @@ export default function Page() {
           {!isAtBottom && !isLoading && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 bg-white text-black border border-gray-200 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-all"
+              className="absolute bottom-[145px] md:bottom-[130px] left-1/2 -translate-x-1/2 z-50 bg-white text-black border border-gray-200 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-all"
             >
               <ChevronDown className="w-5 h-5" />
             </button>
